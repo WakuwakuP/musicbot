@@ -1,4 +1,3 @@
-const portAudio = require('naudiodon');
 const Discord = require('discord.js');
 const command = require('./command');
 
@@ -7,18 +6,6 @@ if (undefined === process.env.DISCORD_TOKEN) {
 }
 
 const discordToken = process.env.DISCORD_TOKEN;
-
-var ai = new portAudio.AudioIO({
-  inOptions: {
-    channelCount: 2,
-    sampleFormat: portAudio.SampleFormat16Bit,
-    sampleRate: 44100,
-    deviceId: 2,
-    closeOnError: false,
-  }
-});
-ai.pipe();
-ai.start();
 
 const discordClient = new Discord.Client({
   restTimeOffset: 100,
@@ -33,5 +20,6 @@ discordClient.on('interactionCreate', async interaction => {
 });
 
 discordClient.on('ready', client => {
+  command.create();
   console.log('Discord ready!');
 });

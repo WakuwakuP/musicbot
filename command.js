@@ -1,5 +1,8 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { Routes } from 'discord-api-types/v9';
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { REST } = require('@discordjs/rest');
+const { Routes, ChannelType }  = require('discord-api-types/v9');
+const portAudio = require('naudiodon');
+
 const {
   joinVoiceChannel,
   createAudioPlayer,
@@ -16,30 +19,26 @@ if (undefined === process.env.DISCORD_APPLICATION_ID) {
   throw 'DISCORD_APPLICATION_ID is undefined.'
 }
 
+if (undefined === process.env.DISCORD_GUILD_ID) {
+  throw 'DISCORD_GUILD_ID is undefined.'
+}
+
 const discordToken = process.env.DISCORD_TOKEN;
 const applicationId = process.env.DISCORD_APPLICATION_ID;
 const guildId = process.env.DISCORD_GUILD_ID;
 
 const rest = new REST({ version: '9' }).setToken(discordToken);
 
-var ai = new portAudio.AudioIO({
-  inOptions: {
-    channelCount: 2,
-    sampleFormat: portAudio.SampleFormat16Bit,
-    sampleRate: 44100,
-    deviceId: 2,
-    closeOnError: false,
-  }
-});
-
-const m = new SlashCommandBuilder().setName('m').setDescription('音楽Botの操作')
+const m = new SlashCommandBuilder()
+  .setName('m')
+  .setDescription('音楽Botの操作')
   .addSubcommand(subcommand => subcommand
     .setName('join')
     .setDescription('現在のVCに呼ぶ')
     .addChannelOption(option => option
       .setName('voice_channel')
-      .setDescription('ボイスチャンネル')
-      .addChannelTypes(['GuildVoice', 'GuildStageVoice'])
+      .setDescription('チャンネル')
+      .addChannelTypes([ChannelType.GuildVoice, ChannelType.GuildStageVoice])
       .setRequired(true)))
   .addSubcommand(subcommand => subcommand
     .setName('leave')
@@ -49,7 +48,7 @@ const commands = [
   m
 ];
 
-const join = function (interaction) {
+const join = async function (interaction) {
   const channel = interaction.options.getChannel('voice_channel', true);
   const joinOption = {
     adapterCreator: channel.guild.voiceAdapterCreator,
@@ -92,10 +91,9 @@ exports.create = async function () {
   try {
     await rest.put(
       Routes.applicationGuildCommands(applicationId, guildId),
-      {
-        body: commands
-      }
-    )
+      { body: commands }
+    );
+    console.log('Successfully reloaded application (/) commands.');
   } catch (err) {
     console.log(err);
   }
