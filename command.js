@@ -81,7 +81,7 @@ const join = async function (interaction) {
   player.play(resource);
 }
 
-const leave = function (interaction) {
+const leave = async function (interaction) {
   await interaction.reply({
     content: 'leave!',
     ephemeral: true
