@@ -3,12 +3,15 @@ const { REST } = require('@discordjs/rest');
 const { Routes, ChannelType } = require('discord-api-types/v9');
 const portAudio = require('naudiodon');
 
+console.log(portAudio.getDevices());
+
 const {
   joinVoiceChannel,
   createAudioPlayer,
   createAudioResource,
   StreamType,
-  getVoiceConnection
+  getVoiceConnection,
+  NoSubscriberBehavior
 } = require("@discordjs/voice");
 
 if (undefined === process.env.DISCORD_TOKEN) {
@@ -48,6 +51,8 @@ const commands = [
   m
 ];
 
+let stream
+
 const join = async function (interaction) {
   await interaction.reply({
     content: 'join!',
@@ -62,23 +67,26 @@ const join = async function (interaction) {
     selfMute: false,
   };
   const conn = await joinVoiceChannel(joinOption);
-  const player = createAudioPlayer();
+  const player = createAudioPlayer({
+    behaviors: {
+      noSubscriber: NoSubscriberBehavior.Pause,
+    }
+  });
   conn.subscribe(player);
-
-  const stream = new portAudio.AudioIO({
+  stream = new portAudio.AudioIO({
     inOptions: {
       channelCount: 2,
       sampleFormat: portAudio.SampleFormat16Bit,
       sampleRate: 44100,
-      deviceId: 2,
+      deviceId: 1,
       closeOnError: false,
     }
   });
-  const resource = createAudioResource(
-    stream,
-    { inputType: StreamType.Raw }
-  );
-  player.play(resource);
+  const resource = createAudioResource(stream, {
+    inputType: StreamType.Raw
+  })
+  await player.play(resource);
+  stream.start();
 }
 
 const leave = async function (interaction) {
@@ -86,12 +94,10 @@ const leave = async function (interaction) {
     content: 'leave!',
     ephemeral: true
   })
+  stream.quit()
   const conn = getVoiceConnection(guildId)
   if (conn) {
-    const vcChannelId = conn.joinConfig.channelId
-    if (discordClient.channels.cache.get(vcChannelId).members.size < 2) {
-      conn.destroy();
-    }
+    conn.destroy();
   }
 }
 
@@ -108,16 +114,17 @@ exports.create = async function () {
 }
 
 exports.interactionController = function (interaction) {
-  if (interaction.isCommand()) {
-    if (interaction.connamdName === 'm') {
-      if (interaction.options.getSubcommand() === 'join') {
-        join(interaction);
-        return;
-      }
-      if (interaction.options.getSubcommand() === 'leave') {
-        leave(interaction);
-        return;
-      }
+  if (!interaction.isCommand()) {
+    return;
+  }
+  if (interaction.commandName === 'm') {
+    if (interaction.options.getSubcommand() === 'join') {
+      join(interaction);
+      return;
+    }
+    if (interaction.options.getSubcommand() === 'leave') {
+      leave(interaction);
+      return;
     }
   }
 }
