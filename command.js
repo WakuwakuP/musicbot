@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { REST } = require('@discordjs/rest');
-const { Routes, ChannelType }  = require('discord-api-types/v9');
+const { Routes, ChannelType } = require('discord-api-types/v9');
 const portAudio = require('naudiodon');
 
 const {
@@ -49,6 +49,10 @@ const commands = [
 ];
 
 const join = async function (interaction) {
+  await interaction.reply({
+    content: 'join!',
+    ephemeral: true
+  })
   const channel = interaction.options.getChannel('voice_channel', true);
   const joinOption = {
     adapterCreator: channel.guild.voiceAdapterCreator,
@@ -73,11 +77,15 @@ const join = async function (interaction) {
   const resource = createAudioResource(
     stream,
     { inputType: StreamType.Raw }
-  )
-  player.play(resource)
+  );
+  player.play(resource);
 }
 
 const leave = function (interaction) {
+  await interaction.reply({
+    content: 'leave!',
+    ephemeral: true
+  })
   const conn = getVoiceConnection(guildId)
   if (conn) {
     const vcChannelId = conn.joinConfig.channelId
