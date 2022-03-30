@@ -19,7 +19,7 @@ discordClient.on('interactionCreate', async interaction => {
   command.interactionController(interaction);
 });
 
-discordClient.on('ready', client => {
+discordClient.on('ready', () => {
   command.create();
   console.log('Discord ready!');
 });

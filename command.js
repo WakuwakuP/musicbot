@@ -2,9 +2,6 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { REST } = require('@discordjs/rest');
 const { Routes, ChannelType } = require('discord-api-types/v9');
 const portAudio = require('naudiodon');
-
-console.log(portAudio.getDevices());
-
 const {
   joinVoiceChannel,
   createAudioPlayer,
@@ -13,6 +10,9 @@ const {
   getVoiceConnection,
   NoSubscriberBehavior
 } = require("@discordjs/voice");
+
+// deviceId confirmation
+console.log(portAudio.getDevices());
 
 if (undefined === process.env.DISCORD_TOKEN) {
   throw 'DISCORD_TOKEN is undefined.';
@@ -26,36 +26,26 @@ if (undefined === process.env.DISCORD_GUILD_ID) {
   throw 'DISCORD_GUILD_ID is undefined.'
 }
 
+if (undefined === process.env.PORT_AUDIO_DEVICE_ID) {
+  throw 'PORT_AUDIO_DEVICE_ID is undefined.'
+}
+
 const discordToken = process.env.DISCORD_TOKEN;
 const applicationId = process.env.DISCORD_APPLICATION_ID;
 const guildId = process.env.DISCORD_GUILD_ID;
+const deviceId = process.env.PORT_AUDIO_DEVICE_ID;
 
 const rest = new REST({ version: '9' }).setToken(discordToken);
 
-const m = new SlashCommandBuilder()
-  .setName('m')
-  .setDescription('音楽Botの操作')
-  .addSubcommand(subcommand => subcommand
-    .setName('join')
-    .setDescription('現在のVCに呼ぶ')
-    .addChannelOption(option => option
-      .setName('voice_channel')
-      .setDescription('チャンネル')
-      .addChannelTypes([ChannelType.GuildVoice, ChannelType.GuildStageVoice])
-      .setRequired(true)))
-  .addSubcommand(subcommand => subcommand
-    .setName('leave')
-    .setDescription('VCから切断する'));
-
-const commands = [
-  m
-];
-
 let stream
 
+/**
+ * Connect bot to voice chat
+ * @param {Interaction} interaction 
+ */
 const join = async function (interaction) {
   await interaction.reply({
-    content: 'join!',
+    content: 'join !',
     ephemeral: true
   })
   const channel = interaction.options.getChannel('voice_channel', true);
@@ -78,7 +68,7 @@ const join = async function (interaction) {
       channelCount: 2,
       sampleFormat: portAudio.SampleFormat16Bit,
       sampleRate: 44100,
-      deviceId: 1,
+      deviceId: deviceId,
       closeOnError: false,
     }
   });
@@ -89,9 +79,13 @@ const join = async function (interaction) {
   stream.start();
 }
 
+/**
+ * Disconnect bot from voice chat
+ * @param {Interaction} interaction 
+ */
 const leave = async function (interaction) {
   await interaction.reply({
-    content: 'leave!',
+    content: 'leave !',
     ephemeral: true
   })
   stream.quit()
@@ -101,7 +95,29 @@ const leave = async function (interaction) {
   }
 }
 
+/**
+ * Create (/) commands
+ * @returns void
+ */
 exports.create = async function () {
+  const m = new SlashCommandBuilder()
+    .setName('m')
+    .setDescription('音楽Botの操作')
+    .addSubcommand(subcommand => subcommand
+      .setName('join')
+      .setDescription('現在のVCに呼ぶ')
+      .addChannelOption(option => option
+        .setName('voice_channel')
+        .setDescription('チャンネル')
+        .addChannelTypes([ChannelType.GuildVoice, ChannelType.GuildStageVoice])
+        .setRequired(true)))
+    .addSubcommand(subcommand => subcommand
+      .setName('leave')
+      .setDescription('VCから切断する'));
+
+  const commands = [
+    m
+  ];
   try {
     await rest.put(
       Routes.applicationGuildCommands(applicationId, guildId),
@@ -113,6 +129,11 @@ exports.create = async function () {
   }
 }
 
+/**
+ * Interaction Controller
+ * @param {Interaction} interaction 
+ * @returns void 
+ */
 exports.interactionController = function (interaction) {
   if (!interaction.isCommand()) {
     return;
