@@ -1,4 +1,6 @@
-# musicbot
+# (WIP) musicbot
+
+* WIP: Stable playback is not possible
 
 A Discord bot that plays music played on the host machine.
 
