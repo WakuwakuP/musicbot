@@ -33,22 +33,11 @@ if (undefined === process.env.PORT_AUDIO_DEVICE_ID) {
 const discordToken = process.env.DISCORD_TOKEN;
 const applicationId = process.env.DISCORD_APPLICATION_ID;
 const guildId = process.env.DISCORD_GUILD_ID;
-const deviceId = process.env.PORT_AUDIO_DEVICE_ID;
+const deviceId = Number(process.env.PORT_AUDIO_DEVICE_ID);
 
 const rest = new REST({ version: '9' }).setToken(discordToken);
 
-const stream = new portAudio.AudioIO({
-  inOptions: {
-    deviceId: deviceId,
-    sampleRate: 44100,
-    channelCount: 2,
-    sampleFormat: portAudio.SampleFormat16Bit,
-    maxQueue: 6,
-    highwaterMark: 65536,
-    framesPerBuffer: 1024,
-    closeOnError: false,
-  }
-});
+let stream;
 
 /**
  * Connect bot to voice chat
@@ -74,6 +63,18 @@ const join = async function (interaction) {
     }
   });
   conn.subscribe(player);
+  stream = new portAudio.AudioIO({
+    inOptions: {
+      deviceId: deviceId,
+      sampleRate: 44100,
+      channelCount: 2,
+      sampleFormat: portAudio.SampleFormat16Bit,
+      maxQueue: 2,
+      highwaterMark: 65536,
+      framesPerBuffer: 1024,
+      closeOnError: false,
+    }
+  });
   const resource = createAudioResource(stream, {
     inputType: StreamType.Raw
   })
@@ -90,7 +91,9 @@ const leave = async function (interaction) {
     content: 'leave !',
     ephemeral: true
   })
-  stream.quit()
+  if (stream) {
+    stream.quit()
+  }
   const conn = getVoiceConnection(guildId)
   if (conn) {
     conn.destroy();
