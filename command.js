@@ -12,7 +12,7 @@ const {
 } = require("@discordjs/voice");
 
 // deviceId confirmation
-console.log(portAudio.getDevices());
+console.log((portAudio.getDevices()).map(data => `id: ${data.id}, name: ${data.name}`));
 
 if (undefined === process.env.DISCORD_TOKEN) {
   throw 'DISCORD_TOKEN is undefined.';
@@ -37,7 +37,18 @@ const deviceId = process.env.PORT_AUDIO_DEVICE_ID;
 
 const rest = new REST({ version: '9' }).setToken(discordToken);
 
-let stream
+const stream = new portAudio.AudioIO({
+  inOptions: {
+    deviceId: deviceId,
+    sampleRate: 44100,
+    channelCount: 2,
+    sampleFormat: portAudio.SampleFormat16Bit,
+    maxQueue: 6,
+    highwaterMark: 65536,
+    framesPerBuffer: 1024,
+    closeOnError: false,
+  }
+});
 
 /**
  * Connect bot to voice chat
@@ -63,15 +74,6 @@ const join = async function (interaction) {
     }
   });
   conn.subscribe(player);
-  stream = new portAudio.AudioIO({
-    inOptions: {
-      channelCount: 2,
-      sampleFormat: portAudio.SampleFormat16Bit,
-      sampleRate: 44100,
-      deviceId: deviceId,
-      closeOnError: false,
-    }
-  });
   const resource = createAudioResource(stream, {
     inputType: StreamType.Raw
   })
