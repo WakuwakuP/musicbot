@@ -10,13 +10,6 @@ const {
   getVoiceConnection,
   NoSubscriberBehavior
 } = require("@discordjs/voice");
-const opus = require("@discordjs/opus");
-
-const rate = 48000;
-const channels = 2;
-const frameSize = rate / 100;
-const opusEncodeStream = new opus.Encoder(rate, channels, frameSize);
-
 
 // deviceId confirmation
 console.log(portAudio.getDevices());
@@ -79,8 +72,8 @@ const join = async function (interaction) {
       closeOnError: false,
     }
   });
-  const resource = createAudioResource(stream.pipe(opusEncodeStream), {
-    inputType: StreamType.Opus
+  const resource = createAudioResource(stream, {
+    inputType: StreamType.Raw
   })
   await player.play(resource);
   stream.start();
