@@ -59,7 +59,7 @@ const join = async function (interaction) {
   const conn = await joinVoiceChannel(joinOption);
   const player = createAudioPlayer({
     behaviors: {
-      noSubscriber: NoSubscriberBehavior.Pause,
+      noSubscriber: NoSubscriberBehavior.Play,
     }
   });
   conn.subscribe(player);
@@ -69,9 +69,9 @@ const join = async function (interaction) {
       sampleRate: 44100,
       channelCount: 2,
       sampleFormat: portAudio.SampleFormat16Bit,
-      maxQueue: 2,
+      maxQueue: 100,
       highwaterMark: 65536,
-      framesPerBuffer: 1024,
+      framesPerBuffer: 16,
       closeOnError: false,
     }
   });
